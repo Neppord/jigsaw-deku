@@ -115,8 +115,8 @@ main = do
       receive_x = receive_pos <#> map fst
       receive_y = receive_pos <#> map snd
 
-      logging :: Event (Tuple Int Int)
-      logging = makeEvent \k -> do
+      move_selected :: Event (Tuple Int Int)
+      move_selected = makeEvent \k -> do
         void $ subscribe drag \{ x: dx, y: dy } -> do
           let
             move = dx /\ dy
@@ -139,7 +139,7 @@ main = do
       sink event = event <#~> \_ -> blank
     svg
       (D.Width !:= show (width * 2) <|> D.Height !:= show (height * 2))
-      ( [ sink logging
+      ( [ sink move_selected
         , sink unselect_all
         , defs_ $
             pieces <#> \(x /\ y) -> pattern
