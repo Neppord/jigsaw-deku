@@ -56,10 +56,10 @@ height :: Int
 height = 2160
 
 pieces_wide :: Int
-pieces_wide = 16 * 2
+pieces_wide = 16
 
 pieces_high :: Int
-pieces_high = 9 * 2
+pieces_high = 9
 
 piece_width :: Int
 piece_width = width / pieces_wide
@@ -68,7 +68,7 @@ piece_height :: Int
 piece_height = height / pieces_high
 
 pieces :: Pieces
-pieces = Tuple <$> 0 .. pieces_wide <*> 0 .. pieces_high
+pieces = Tuple <$> 0 .. (pieces_wide - 1) <*> 0 .. (pieces_high - 1)
 
 main :: Effect Unit
 main = do

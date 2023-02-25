@@ -6477,14 +6477,10 @@
   var mapAttr4 = /* @__PURE__ */ mapAttr2(attrOnMouseupEffectUnit);
   var disj2 = /* @__PURE__ */ disj(/* @__PURE__ */ heytingAlgebraEvent(heytingAlgebraBoolean));
   var width8 = 3840;
-  var pieces_wide = /* @__PURE__ */ function() {
-    return 16 * 2 | 0;
-  }();
-  var pieces_high = /* @__PURE__ */ function() {
-    return 9 * 2 | 0;
-  }();
+  var pieces_wide = 16;
+  var pieces_high = 9;
   var pieces = /* @__PURE__ */ function() {
-    return apply(applyArray)(map(functorArray)(Tuple.create)(range(0)(pieces_wide)))(range(0)(pieces_high));
+    return apply(applyArray)(map(functorArray)(Tuple.create)(range(0)(pieces_wide - 1 | 0)))(range(0)(pieces_high - 1 | 0));
   }();
   var piece_width = /* @__PURE__ */ div2(width8)(pieces_wide);
   var height8 = 2160;
@@ -6543,7 +6539,7 @@
           var is_shift = alt7(pure15(false))(alt7(is_shift_down)(is_shift_up));
           var drag = gate2(v.value1)(sub1(mouse_position)(mouse_position));
           var has_been_dragging = alt7(mapFlipped22(v.value1)($$const(false)))(mapFlipped22(drag)($$const(true)));
-          var logging = makeEvent(function(k) {
+          var move_selected = makeEvent(function(k) {
             return function __do4() {
               $$void8(subscribe(drag)(function(v3) {
                 var move = new Tuple(v3.x, v3.y);
@@ -6583,7 +6579,7 @@
               return pure8(unit);
             };
           });
-          return svg(alt7(pureAttr2(Width.value)(show3(width8 * 2 | 0)))(pureAttr1(Height.value)(show3(height8 * 2 | 0))))(append5([sink(logging), sink(unselect_all), defs_(mapFlipped32(pieces)(function(v3) {
+          return svg(alt7(pureAttr2(Width.value)(show3(width8 * 2 | 0)))(pureAttr1(Height.value)(show3(height8 * 2 | 0))))(append5([sink(move_selected), sink(unselect_all), defs_(mapFlipped32(pieces)(function(v3) {
             return pattern(alt7(pureAttr22(Id.value)("background-" + (show3(v3.value0) + ("-" + show3(v3.value1)))))(alt7(pureAttr3(Width.value)("100%"))(alt7(pureAttr4(Height.value)("100%"))(pureAttr5(ViewBox.value)(intercalate4(" ")(mapFlipped32([0, 0, piece_width, piece_height])(show3)))))))([image(alt7(pureAttr6(Href.value)("ship-1366926_crop_4k.png"))(alt7(pureAttr7(X.value)(show3((-v3.value0 | 0) * piece_width | 0)))(alt7(pureAttr8(Y.value)(show3((-v3.value1 | 0) * piece_height | 0)))(alt7(pureAttr9(Width.value)(show3(width8)))(pureAttr10(Height.value)(show3(height8)))))))([])]);
           }))])(mapFlipped32(pieces)(function(v3) {
             return rect(alt7(mapAttr1(X.value)(mapFlipped22(mapFlipped22(receive_x(new Tuple(v3.value0, v3.value1)))(function(v4) {
