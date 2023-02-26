@@ -5,7 +5,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Array ((..))
 import Data.Compactable (compact)
-import Data.Foldable (for_)
+import Data.Foldable (for_, oneOfMap)
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.Profunctor (lcmap)
 import Data.Traversable (for)
@@ -18,7 +18,7 @@ import Deku.DOM.Elt.Image (image)
 import Deku.DOM.Elt.Pattern (pattern)
 import Deku.DOM.Elt.Rect (rect)
 import Deku.DOM.Elt.Svg (svg)
-import Deku.Hooks (useMailboxed, useState)
+import Deku.Hooks (useDyn_, useMailboxed, useState)
 import Deku.Toplevel (runInBody)
 import Effect (Effect)
 import Effect.Random (randomInt)
@@ -45,6 +45,7 @@ import Data.Maybe (fromMaybe) as Maybe
 import FRP.Event.Mouse (down, getMouse, withPosition) as Mouse
 import Effect.Ref (modify_, new, read, write) as Ref
 import Data.Set (empty, insert, singleton) as Set
+import Deku.Core (dyn)
 
 type Piece = Tuple Int Int
 type Pieces = Array Piece
@@ -139,60 +140,58 @@ main = do
       sink event = event <#~> \_ -> blank
     svg
       (D.Width !:= show (width * 2) <|> D.Height !:= show (height * 2))
-      ( [ sink move_selected
-        , sink unselect_all
-        , defs_ $
-            pieces <#> \(x /\ y) -> pattern
-              ( D.Id !:= "background-" <> show x <> "-" <> show y
-                  <|> D.Width !:= "100%"
-                  <|> D.Height !:= "100%"
-                  <|> D.ViewBox !:=
-                    ( [ 0, 0, piece_width, piece_height ]
-                        <#> show
-                        # Array.intercalate " "
-                    )
-              )
-              [ image
-                  ( D.Href !:= "ship-1366926_crop_4k.png"
-                      <|> D.X !:= show (-x * piece_width)
-                      <|> D.Y !:= show (-y * piece_height)
-                      <|> D.Width !:= show width
-                      <|> D.Height !:= show height
+      [ sink move_selected
+      , sink unselect_all
+      , defs_ $
+          pieces <#> \(x /\ y) -> pattern
+            ( D.Id !:= "background-" <> show x <> "-" <> show y
+                <|> D.Width !:= "100%"
+                <|> D.Height !:= "100%"
+                <|> D.ViewBox !:=
+                  ( [ 0, 0, piece_width, piece_height ]
+                      <#> show
+                      # Array.intercalate " "
                   )
-                  []
-              ]
-
-        ]
-          <>
-            ( pieces <#> \(x /\ y) ->
-                rect
-                  ( D.X <:=> (receive_x (x /\ y) <#> (_ + (x * piece_width)) <#> show)
-                      <|> D.Y <:=> (receive_y (x /\ y) <#> (_ + (y * piece_height)) <#> show)
-                      <|> D.Width !:= (show $ piece_width)
-                      <|> D.Height !:= (show $ piece_height)
-                      <|> D.Fill !:= "url(#background-" <> show x <> "-" <> show y <> ")"
-                      <|> D.Stroke <:=>
-                        ( receive_selection (x /\ y) <#> case _ of
-                            true -> "orange"
-                            false -> "none"
-                        )
-                      <|> D.StrokeWidth !:= "5"
-                      <|> D.OnMousedown !:= do
-                        send_selection { address: x /\ y, payload: true }
-                        selected # Ref.modify_ (Set.insert (x /\ y))
-                        send_piece_dragged true
-                      <|> D.OnMouseup <:=>
-                        ( (has_been_dragging || is_shift) <#> case _ of
-                            true -> send_piece_dragged false
-                            false -> do
-                              to_unselect <- Ref.read selected
-                              for_ to_unselect \address ->
-                                send_selection { address, payload: false }
-                              send_selection { address: x /\ y, payload: true }
-                              selected # Ref.write (Set.singleton (x /\ y))
-                              send_piece_dragged false
-                        )
-                  )
-                  []
             )
-      )
+            [ image
+                ( D.Href !:= "ship-1366926_crop_4k.png"
+                    <|> D.X !:= show (-x * piece_width)
+                    <|> D.Y !:= show (-y * piece_height)
+                    <|> D.Width !:= show width
+                    <|> D.Height !:= show height
+                )
+                []
+            ]
+      , dyn $ oneOfMap pure $ pieces <#> \(x /\ y) -> Deku.do
+          { sendTo } <- useDyn_
+          rect
+            ( D.X <:=> (receive_x (x /\ y) <#> (_ + (x * piece_width)) <#> show)
+                <|> D.Y <:=> (receive_y (x /\ y) <#> (_ + (y * piece_height)) <#> show)
+                <|> D.Width !:= (show $ piece_width)
+                <|> D.Height !:= (show $ piece_height)
+                <|> D.Fill !:= "url(#background-" <> show x <> "-" <> show y <> ")"
+                <|> D.Stroke <:=>
+                  ( receive_selection (x /\ y) <#> case _ of
+                      true -> "orange"
+                      false -> "none"
+                  )
+                <|> D.StrokeWidth !:= "5"
+                <|> D.OnMousedown !:= do
+                  sendTo (pieces_wide * pieces_high)
+                  send_selection { address: x /\ y, payload: true }
+                  selected # Ref.modify_ (Set.insert (x /\ y))
+                  send_piece_dragged true
+                <|> D.OnMouseup <:=>
+                  ( (has_been_dragging || is_shift) <#> case _ of
+                      true -> send_piece_dragged false
+                      false -> do
+                        to_unselect <- Ref.read selected
+                        for_ to_unselect \address ->
+                          send_selection { address, payload: false }
+                        send_selection { address: x /\ y, payload: true }
+                        selected # Ref.write (Set.singleton (x /\ y))
+                        send_piece_dragged false
+                  )
+            )
+            []
+      ]
